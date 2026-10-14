@@ -1,0 +1,58 @@
+# ==============================================================================
+# DocuMind AI - Docker Ignore File
+# Excludes secrets, local persistence, caches, and test artifacts from the build context.
+# ==============================================================================
+
+# Secrets and environment files (NEVER bake credentials into image)
+.env
+.env.*
+!.env.example
+
+# Local ChromaDB vector databases (NEVER bake persistent vector records into image)
+chroma_db/
+chroma_db*/
+*.sqlite3
+*.sqlite3-journal
+
+# Local document storage and PDFs (NEVER bake user uploads into image)
+data/
+data/uploads/
+*.pdf
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+build/
+dist/
+
+# Python bytecode and runtime caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing, evaluation, and coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Version control metadata
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# IDE, editor, and OS metadata
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,46 @@
+# =========================
+# DocuMind AI - .gitignore
+# =========================
+
+# Secrets and environment configurations
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python caches and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# Pytest and coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Local databases & ChromaDB persistence
+chroma_db/
+*.sqlite3
+*.db
+data/
+uploads/
+
+# Operating System & IDE artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
