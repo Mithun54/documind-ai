@@ -37,6 +37,16 @@ logger = logging.getLogger("documind.app")
 # Load local environment configuration
 load_dotenv()
 
+# Bridge Streamlit Community Cloud Secrets into environment if present
+try:
+    if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+        secret_key = str(st.secrets["GEMINI_API_KEY"]).strip()
+        if secret_key and secret_key != "your_gemini_api_key_here":
+            if not os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") == "your_gemini_api_key_here":
+                os.environ["GEMINI_API_KEY"] = secret_key
+except Exception:
+    pass
+
 # Upload storage directory
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join("data", "uploads"))
 MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "15"))
@@ -165,6 +175,111 @@ def check_api_key_configured() -> bool:
         return False
 
 
+def get_theme_css(theme: str) -> str:
+    """Generate scoped CSS for Dark or Light theme."""
+    if theme == "Light":
+        return """
+        /* Light Theme Styles */
+        .stApp {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #f1f5f9;
+            border-right: 1px solid #e2e8f0;
+        }
+        [data-testid="stSidebar"] h1, 
+        [data-testid="stSidebar"] h2, 
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] p {
+            color: #0f172a !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
+            color: #475569 !important;
+        }
+        [data-testid="stChatMessage"] {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            color: #0f172a;
+        }
+        [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
+            color: #0f172a !important;
+        }
+        [data-testid="stExpander"] {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        [data-testid="stExpander"] summary {
+            color: #0f172a !important;
+        }
+        code {
+            background-color: #f1f5f9 !important;
+            color: #0369a1 !important;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #0f172a !important;
+        }
+        """
+    # Default to Dark theme
+    return """
+    /* Dark Theme Styles */
+    .stApp {
+        background-color: #0e1117;
+        color: #f1f5f9;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #131722;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] p {
+        color: #f1f5f9 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {
+        color: #94a3b8 !important;
+    }
+    [data-testid="stChatMessage"] {
+        background-color: #1a1f2c;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        color: #f1f5f9;
+    }
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {
+        color: #f1f5f9 !important;
+    }
+    [data-testid="stExpander"] {
+        background-color: #161b26;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+    }
+    [data-testid="stExpander"] summary {
+        color: #f1f5f9 !important;
+    }
+    code {
+        background-color: #1e293b !important;
+        color: #38bdf8 !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #f8fafc !important;
+    }
+    """
+
+
+def apply_theme(theme: str) -> None:
+    """Inject custom CSS to apply Light or Dark theme styling to the Streamlit app."""
+    css = get_theme_css(theme)
+    if css:
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+
 def main() -> None:
     """Primary entry point for the Streamlit web application."""
     st.set_page_config(
@@ -174,6 +289,13 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
 
+    # Initialize theme session state (default: Dark)
+    if "theme" not in st.session_state:
+        st.session_state["theme"] = "Dark"
+
+    # Apply active theme CSS
+    apply_theme(st.session_state["theme"])
+
     # Initialize chat session state
     if "messages" not in st.session_state:
         st.session_state["messages"] = []
@@ -182,6 +304,22 @@ def main() -> None:
     with st.sidebar:
         st.title("🧠 DocuMind AI")
         st.caption("Intelligent Document Assistant")
+
+        st.markdown("---")
+        theme_options = ["🌙 Dark Mode", "☀️ Light Mode"]
+        current_theme_index = 0 if st.session_state["theme"] == "Dark" else 1
+
+        selected_theme_label = st.radio(
+            "🎨 Theme",
+            options=theme_options,
+            index=current_theme_index,
+            horizontal=True,
+            help="Switch between Dark and Light mode for the application.",
+        )
+        selected_theme = "Dark" if "Dark" in selected_theme_label else "Light"
+        if selected_theme != st.session_state["theme"]:
+            st.session_state["theme"] = selected_theme
+            st.rerun()
 
         st.markdown("---")
         st.subheader("📄 Document Ingestion")
@@ -285,7 +423,7 @@ def main() -> None:
         if has_key:
             st.caption("🟢 Gemini API: **Connected**")
         else:
-            st.warning("⚠️ `GEMINI_API_KEY` missing in `.env`. AI synthesis will be inactive.")
+            st.warning("⚠️ `GEMINI_API_KEY` not configured. Please set it in `.env` (locally) or Streamlit Secrets (cloud).")
 
         st.caption(f"🧠 Generation: `{DEFAULT_GENERATION_MODEL}`")
         st.caption(f"🔍 Embeddings: `{DEFAULT_EMBEDDING_MODEL}`")

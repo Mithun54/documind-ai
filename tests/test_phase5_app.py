@@ -16,6 +16,8 @@ from app import (
     sanitize_filename,
     format_citation_display,
     get_active_filter,
+    get_theme_css,
+    apply_theme,
 )
 from rag import (
     index_pdf,
@@ -201,3 +203,34 @@ def test_ui_backend_integration_flow(tmp_path: pathlib.Path) -> None:
     assert len(response.citations) > 0
     assert response.citations[0]["source"] == "handbook.pdf"
     assert response.citations[0]["page"] == 1
+
+
+def test_get_theme_css_dark_mode():
+    """Verify dark mode CSS contains dark theme selectors and background colors."""
+    css = get_theme_css("Dark")
+    assert ".stApp" in css
+    assert "#0e1117" in css
+    assert '[data-testid="stSidebar"]' in css
+    assert '[data-testid="stChatMessage"]' in css
+
+
+def test_get_theme_css_light_mode():
+    """Verify light mode CSS contains light theme selectors and background colors."""
+    css = get_theme_css("Light")
+    assert ".stApp" in css
+    assert "#f8fafc" in css
+    assert '[data-testid="stSidebar"]' in css
+    assert '[data-testid="stChatMessage"]' in css
+
+
+def test_apply_theme_calls_st_markdown():
+    """Verify apply_theme injects the CSS styles via st.markdown."""
+    from unittest.mock import patch
+    with patch("streamlit.markdown") as mock_markdown:
+        apply_theme("Light")
+        assert mock_markdown.called
+        call_args = mock_markdown.call_args[0][0]
+        assert "<style>" in call_args
+        assert "#f8fafc" in call_args
+        assert mock_markdown.call_args[1].get("unsafe_allow_html") is True
+
